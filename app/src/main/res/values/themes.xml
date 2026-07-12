@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <style name="Theme.ElderGuard" parent="Theme.AppCompat.Light.DarkActionBar">
+        <item name="colorPrimary">#1565C0</item>
+        <item name="colorPrimaryDark">#0D47A1</item>
+        <item name="colorAccent">#FF6F00</item>
+        <item name="android:textColorPrimary">#212121</item>
+    </style>
+
+    <color name="safe_green">#4CAF50</color>
+    <color name="warning_orange">#FF9800</color>
+    <color name="alert_red">#F44336</color>
+</resources>

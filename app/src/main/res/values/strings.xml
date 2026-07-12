@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">长者守护</string>
+    <string name="monitoring_active">监护运行中</string>
+    <string name="start_monitoring">启动监护</string>
+    <string name="stop_monitoring">停止监护</string>
+</resources>

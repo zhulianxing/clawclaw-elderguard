@@ -1,0 +1,2 @@
+-keep class com.google.mediapipe.** { *; }
+-keep class com.elderguard.care.** { *; }

@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:padding="24dp">
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="输入激活码"
+        android:textColor="#333"
+        android:textSize="18sp"
+        android:textStyle="bold" />
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:text="格式: EG00-XXXX-XX\n¥268 买断，支持所有卷积产品"
+        android:textColor="#888"
+        android:textSize="14sp" />
+
+    <EditText
+        android:id="@+id/et_activation_code"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="16dp"
+        android:hint="EG00-XXXX-XX"
+        android:inputType="textCapCharacters"
+        android:letterSpacing="0.1"
+        android:maxLength="12"
+        android:textSize="20sp" />
+
+</LinearLayout>
