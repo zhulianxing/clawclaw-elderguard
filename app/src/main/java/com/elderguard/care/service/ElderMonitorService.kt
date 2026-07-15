@@ -58,7 +58,8 @@ class ElderMonitorService : Service(), LifecycleOwner {
     private lateinit var voiceDetector: VoiceDetector
 
     private var lastAlertTime = 0L
-    private val alertCooldownMs = 60_000L // 1分钟冷却
+    private var alertCooldownMs = 60_000L // 1分钟冷却
+    private var simulateReceiver: SimulateReceiver? = null
 
     override fun onCreate() {
         super.onCreate()
@@ -74,9 +75,11 @@ class ElderMonitorService : Service(), LifecycleOwner {
         when (intent?.action) {
             ACTION_START -> {
                 startForeground(NOTIFICATION_ID, createNotification("监护运行中"))
+                registerSimulateReceiver()
                 startMonitoring()
             }
             ACTION_STOP -> {
+                unregisterSimulateReceiver()
                 stopMonitoring()
                 stopForeground(STOP_FOREGROUND_REMOVE)
                 stopSelf()
@@ -194,6 +197,9 @@ class ElderMonitorService : Service(), LifecycleOwner {
         // 发送短信
         sendSmsAlerts(reason, time)
 
+        // 刷新主界面
+        sendBroadcast(Intent("com.elderguard.care.REFRESH_UI"))
+
         // 重置检测状态
         poseAnalyzer.resetFallDetection()
     }
@@ -271,6 +277,39 @@ class ElderMonitorService : Service(), LifecycleOwner {
     }
 
     override fun onBind(intent: Intent?): IBinder? = null
+
+    // ── ADB 模拟测试 ──
+    inner class SimulateReceiver : BroadcastReceiver() {
+        override fun onReceive(context: Context, intent: Intent) {
+            when (intent.getStringExtra("type")) {
+                "fall" -> triggerAlert("检测到跌倒")
+                "voice" -> triggerAlert("语音求救: 救命")
+                "still" -> triggerAlert("长时间静止")
+                "nocd" -> { alertCooldownMs = 0; Log.i(TAG, "冷却已禁用") }
+                "cd" -> { alertCooldownMs = 60_000; Log.i(TAG, "冷却已恢复") }
+                else -> Log.w(TAG, "未知模拟类型")
+            }
+        }
+    }
+
+    private fun registerSimulateReceiver() {
+        simulateReceiver = SimulateReceiver()
+        val filter = IntentFilter("com.elderguard.care.SIMULATE")
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            registerReceiver(simulateReceiver, filter, Context.RECEIVER_EXPORTED)
+        } else {
+            registerReceiver(simulateReceiver, filter)
+        }
+        Log.i(TAG, "Simulate receiver registered")
+    }
+
+    private fun unregisterSimulateReceiver() {
+        simulateReceiver?.let {
+            try { unregisterReceiver(it) } catch (_: Exception) {}
+            simulateReceiver = null
+        }
+        Log.i(TAG, "Simulate receiver unregistered")
+    }
 }
 
 class BootReceiver : BroadcastReceiver() {

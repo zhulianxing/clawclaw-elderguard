@@ -46,6 +46,12 @@
             android:exported="false"
             android:screenOrientation="portrait" />
 
+        <activity
+            android:name=".ui.CameraPreviewActivity"
+            android:exported="false"
+            android:screenOrientation="portrait"
+            android:theme="@style/Theme.ElderGuard.Fullscreen" />
+
         <service
             android:name=".service.ElderMonitorService"
             android:exported="false"

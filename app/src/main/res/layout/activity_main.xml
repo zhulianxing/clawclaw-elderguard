@@ -1,25 +1,26 @@
 <?xml version="1.0" encoding="utf-8"?>
 <ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="#F5F5F5"
+    android:background="@color/background"
     android:fillViewport="true">
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="vertical"
-        android:padding="24dp">
+        android:padding="20dp">
 
-        <!-- 标题 -->
+        <!-- 顶部标题区 -->
         <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="20dp"
+            android:layout_marginTop="12dp"
             android:gravity="center"
             android:text="🛡️ 长者守护"
-            android:textColor="#1565C0"
-            android:textSize="32sp"
+            android:textColor="@color/primary"
+            android:textSize="30sp"
             android:textStyle="bold" />
 
         <TextView
@@ -27,130 +28,474 @@
             android:layout_height="wrap_content"
             android:gravity="center"
             android:text="跌倒检测 · 语音求救 · 静止告警"
-            android:textColor="#666"
-            android:textSize="16sp" />
+            android:textColor="@color/text_secondary"
+            android:textSize="15sp" />
 
-        <!-- 状态卡片 -->
+        <!-- 核心状态卡片 -->
         <androidx.cardview.widget.CardView
             android:id="@+id/card_monitor"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="32dp"
-            app:cardCornerRadius="16dp"
-            app:cardElevation="4dp"
-            xmlns:app="http://schemas.android.com/apk/res-auto">
+            android:layout_marginTop="24dp"
+            app:cardCornerRadius="20dp"
+            app:cardElevation="6dp"
+            app:cardBackgroundColor="@color/surface">
 
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="vertical"
-                android:padding="24dp">
+                android:padding="28dp">
 
+                <!-- 状态圆点指示器 -->
+                <LinearLayout
+                    android:id="@+id/layout_status_header"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="center"
+                    android:gravity="center"
+                    android:orientation="horizontal">
+
+                    <View
+                        android:id="@+id/indicator_dot"
+                        android:layout_width="16dp"
+                        android:layout_height="16dp"
+                        android:layout_gravity="center"
+                        android:background="@drawable/dot_indicator" />
+
+                    <TextView
+                        android:id="@+id/tv_status"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="10dp"
+                        android:text="⚪ 待启动"
+                        android:textColor="@color/text_primary"
+                        android:textSize="26sp"
+                        android:textStyle="bold" />
+                </LinearLayout>
+
+                <!-- 试用/激活信息 -->
                 <TextView
-                    android:id="@+id/tv_status"
+                    android:id="@+id/tv_license"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
+                    android:layout_marginTop="14dp"
                     android:gravity="center"
-                    android:text="⚪ 待启动"
-                    android:textSize="28sp"
-                    android:textStyle="bold" />
+                    android:textSize="14sp" />
 
-                <TextView
-                    android:id="@+id/tv_log"
+                <!-- 功能标签 -->
+                <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="12dp"
+                    android:layout_marginTop="14dp"
                     android:gravity="center"
-                    android:textColor="#888"
-                    android:textSize="14sp"
-                    android:visibility="gone" />
+                    android:orientation="horizontal">
 
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:background="@drawable/tag_bg_safe"
+                        android:paddingHorizontal="10dp"
+                        android:paddingVertical="4dp"
+                        android:text="🦵 跌倒"
+                        android:textColor="@color/safe_green"
+                        android:textSize="12sp" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="8dp"
+                        android:background="@drawable/tag_bg_voice"
+                        android:paddingHorizontal="10dp"
+                        android:paddingVertical="4dp"
+                        android:text="🎤 语音"
+                        android:textColor="@color/primary"
+                        android:textSize="12sp" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="8dp"
+                        android:background="@drawable/tag_bg_warning"
+                        android:paddingHorizontal="10dp"
+                        android:paddingVertical="4dp"
+                        android:text="🧍 静止"
+                        android:textColor="@color/warning_orange"
+                        android:textSize="12sp" />
+                </LinearLayout>
             </LinearLayout>
         </androidx.cardview.widget.CardView>
+
+        <!-- 功能详解 -->
+        <androidx.cardview.widget.CardView
+            android:id="@+id/card_details"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="20dp"
+            app:cardCornerRadius="16dp"
+            app:cardElevation="4dp"
+            app:cardBackgroundColor="@color/surface">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical">
+
+                <!-- 折叠头部 -->
+                <LinearLayout
+                    android:id="@+id/header_details"
+                    android:layout_width="match_parent"
+                    android:layout_height="56dp"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal"
+                    android:paddingHorizontal="20dp"
+                    android:clickable="true"
+                    android:focusable="true"
+                    android:background="?attr/selectableItemBackground">
+
+                    <TextView
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="📖 功能详解"
+                        android:textColor="@color/text_primary"
+                        android:textSize="16sp"
+                        android:textStyle="bold" />
+
+                    <TextView
+                        android:id="@+id/tv_details_arrow"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="▼"
+                        android:textColor="@color/text_hint"
+                        android:textSize="14sp" />
+                </LinearLayout>
+
+                <!-- 详情内容（默认折叠） -->
+                <LinearLayout
+                    android:id="@+id/content_details"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:paddingHorizontal="20dp"
+                    android:paddingBottom="20dp"
+                    android:visibility="gone">
+
+                    <View
+                        android:layout_width="match_parent"
+                        android:layout_height="1dp"
+                        android:background="@color/divider" />
+
+                    <!-- 跌倒检测 -->
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="16dp"
+                        android:orientation="horizontal">
+
+                        <TextView
+                            android:layout_width="32dp"
+                            android:layout_height="32dp"
+                            android:gravity="center"
+                            android:background="@drawable/tag_bg_safe"
+                            android:text="🦵"
+                            android:textSize="16sp" />
+
+                        <LinearLayout
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="12dp"
+                            android:layout_weight="1"
+                            android:orientation="vertical">
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="跌倒检测"
+                                android:textColor="@color/text_primary"
+                                android:textSize="15sp"
+                                android:textStyle="bold" />
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="4dp"
+                                android:text="CameraX 前置摄像头实时分析人体姿态，MediaPipe Pose Landmarker 33 个关键点跟踪。检测到身体宽高比异常 + 姿态角度突变，累计持续 5 秒即触发告警。"
+                                android:textColor="@color/text_secondary"
+                                android:textSize="13sp"
+                                android:lineSpacingExtra="2dp" />
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="4dp"
+                                android:background="@drawable/tag_bg_safe"
+                                android:paddingHorizontal="8dp"
+                                android:paddingVertical="2dp"
+                                android:text="TFLite 硬件加速"
+                                android:textColor="@color/safe_green"
+                                android:textSize="11sp" />
+
+                        </LinearLayout>
+                    </LinearLayout>
+
+                    <View
+                        android:layout_width="match_parent"
+                        android:layout_height="1dp"
+                        android:layout_marginTop="16dp"
+                        android:background="@color/divider" />
+
+                    <!-- 语音求救 -->
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="16dp"
+                        android:orientation="horizontal">
+
+                        <TextView
+                            android:layout_width="32dp"
+                            android:layout_height="32dp"
+                            android:gravity="center"
+                            android:background="@drawable/tag_bg_voice"
+                            android:text="🎤"
+                            android:textSize="16sp" />
+
+                        <LinearLayout
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="12dp"
+                            android:layout_weight="1"
+                            android:orientation="vertical">
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="语音求救识别"
+                                android:textColor="@color/text_primary"
+                                android:textSize="15sp"
+                                android:textStyle="bold" />
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="4dp"
+                                android:text="Vosk 离线中文语音识别引擎，内置 65MB 语言模型，无需网络即可实时监听。识别关键词：救命、帮帮我、救救我、来人啊、摔倒、救命啊、帮忙 — 任一匹配即触发 SOS 告警。"
+                                android:textColor="@color/text_secondary"
+                                android:textSize="13sp"
+                                android:lineSpacingExtra="2dp" />
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="4dp"
+                                android:background="@drawable/tag_bg_voice"
+                                android:paddingHorizontal="8dp"
+                                android:paddingVertical="2dp"
+                                android:text="完全离线 隐私安全"
+                                android:textColor="@color/primary"
+                                android:textSize="11sp" />
+
+                        </LinearLayout>
+                    </LinearLayout>
+
+                    <View
+                        android:layout_width="match_parent"
+                        android:layout_height="1dp"
+                        android:layout_marginTop="16dp"
+                        android:background="@color/divider" />
+
+                    <!-- 静止告警 -->
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="16dp"
+                        android:orientation="horizontal">
+
+                        <TextView
+                            android:layout_width="32dp"
+                            android:layout_height="32dp"
+                            android:gravity="center"
+                            android:background="@drawable/tag_bg_warning"
+                            android:text="🧍"
+                            android:textSize="16sp" />
+
+                        <LinearLayout
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="12dp"
+                            android:layout_weight="1"
+                            android:orientation="vertical">
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="静止异常告警"
+                                android:textColor="@color/text_primary"
+                                android:textSize="15sp"
+                                android:textStyle="bold" />
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="4dp"
+                                android:text="连续 30 帧人体关键点位移均值低于阈值（0.01 归一化距离），即判定为异常静止状态。持续满足设定时间（默认 10 分钟）后触发告警，可防止昏迷、摔倒后无法动弹等场景。"
+                                android:textColor="@color/text_secondary"
+                                android:textSize="13sp"
+                                android:lineSpacingExtra="2dp" />
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="4dp"
+                                android:background="@drawable/tag_bg_warning"
+                                android:paddingHorizontal="8dp"
+                                android:paddingVertical="2dp"
+                                android:text="可配置阈值 + 冷却"
+                                android:textColor="@color/warning_orange"
+                                android:textSize="11sp" />
+
+                        </LinearLayout>
+                    </LinearLayout>
+
+                </LinearLayout>
+            </LinearLayout>
+        </androidx.cardview.widget.CardView>
+
+        <!-- 查看画面按钮 -->
+        <Button
+            android:id="@+id/btn_preview"
+            android:layout_width="match_parent"
+            android:layout_height="48dp"
+            android:layout_marginTop="14dp"
+            android:backgroundTint="@color/surface_variant"
+            android:text="📷 查看画面（确认摄像头对准）"
+            android:textColor="@color/text_secondary"
+            android:textSize="14sp"
+            android:visibility="gone"
+            app:cornerRadius="12dp"
+            app:strokeColor="@color/divider"
+            app:strokeWidth="1dp" />
 
         <!-- 大按钮：启动/停止 -->
         <Button
             android:id="@+id/btn_start"
             android:layout_width="match_parent"
-            android:layout_height="72dp"
-            android:layout_marginTop="24dp"
-            android:backgroundTint="#4CAF50"
+            android:layout_height="68dp"
+            android:layout_marginTop="20dp"
+            android:backgroundTint="@color/safe_green"
             android:text="▶ 启动监护"
-            android:textColor="#FFF"
-            android:textSize="22sp"
-            android:textStyle="bold" />
+            android:textColor="@color/text_on_primary"
+            android:textSize="20sp"
+            android:textStyle="bold"
+            app:cornerRadius="16dp" />
 
         <Button
             android:id="@+id/btn_stop"
             android:layout_width="match_parent"
-            android:layout_height="72dp"
-            android:layout_marginTop="24dp"
-            android:backgroundTint="#F44336"
+            android:layout_height="68dp"
+            android:layout_marginTop="20dp"
+            android:backgroundTint="@color/alert_red"
             android:text="⏹ 停止监护"
-            android:textColor="#FFF"
-            android:textSize="22sp"
+            android:textColor="@color/text_on_primary"
+            android:textSize="20sp"
             android:textStyle="bold"
-            android:visibility="gone" />
+            android:visibility="gone"
+            app:cornerRadius="16dp" />
 
-        <!-- 功能按钮 -->
+        <!-- 功能按钮区 -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="24dp"
+            android:layout_marginTop="20dp"
             android:orientation="horizontal">
 
             <Button
                 android:id="@+id/btn_contacts"
                 android:layout_width="0dp"
                 android:layout_height="56dp"
+                android:layout_marginEnd="10dp"
                 android:layout_weight="1"
-                android:layout_marginEnd="8dp"
-                android:backgroundTint="#1565C0"
+                android:backgroundTint="@color/primary"
                 android:text="📞 联系人"
-                android:textColor="#FFF"
-                android:textSize="16sp" />
+                android:textColor="@color/text_on_primary"
+                android:textSize="15sp"
+                app:cornerRadius="14dp" />
 
             <Button
                 android:id="@+id/btn_settings"
                 android:layout_width="0dp"
                 android:layout_height="56dp"
+                android:layout_marginStart="10dp"
                 android:layout_weight="1"
-                android:layout_marginStart="8dp"
-                android:backgroundTint="#1565C0"
+                android:backgroundTint="@color/primary"
                 android:text="⚙ 设置"
-                android:textColor="#FFF"
-                android:textSize="16sp" />
+                android:textColor="@color/text_on_primary"
+                android:textSize="15sp"
+                app:cornerRadius="14dp" />
         </LinearLayout>
 
-        <!-- 激活码 -->
+        <!-- 日志/事件按钮 -->
+        <Button
+            android:id="@+id/btn_logs"
+            android:layout_width="match_parent"
+            android:layout_height="48dp"
+            android:layout_marginTop="12dp"
+            android:backgroundTint="@color/surface_variant"
+            android:text="📋 事件日志"
+            android:textColor="@color/text_primary"
+            android:textSize="15sp"
+            app:cornerRadius="12dp"
+            app:strokeColor="@color/divider"
+            app:strokeWidth="1dp" />
+
+        <!-- 最近事件预览 -->
+        <LinearLayout
+            android:id="@+id/layout_recent_log"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:background="@drawable/card_bg_mini"
+            android:orientation="horizontal"
+            android:padding="12dp"
+            android:visibility="gone">
+
+            <ImageView
+                android:layout_width="20dp"
+                android:layout_height="20dp"
+                android:layout_gravity="center"
+                android:src="@android:drawable/ic_dialog_info" />
+
+            <TextView
+                android:id="@+id/tv_log"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="8dp"
+                android:layout_weight="1"
+                android:textColor="@color/text_secondary"
+                android:textSize="13sp" />
+        </LinearLayout>
+
+        <!-- 激活码按钮 -->
         <Button
             android:id="@+id/btn_activate"
             android:layout_width="match_parent"
             android:layout_height="48dp"
-            android:layout_marginTop="16dp"
-            android:backgroundTint="#FF9800"
+            android:layout_marginTop="12dp"
+            android:backgroundTint="@color/accent"
             android:text="🔑 输入激活码"
-            android:textColor="#FFF"
-            android:textSize="16sp" />
-
-        <!-- 许可状态 -->
-        <TextView
-            android:id="@+id/tv_license"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="16dp"
-            android:gravity="center"
-            android:textSize="14sp" />
+            android:textColor="@color/text_on_primary"
+            android:textSize="15sp"
+            app:cornerRadius="12dp" />
 
         <!-- 底部说明 -->
         <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="32dp"
+            android:layout_marginTop="24dp"
             android:gravity="center"
             android:text="完全离线运行 · 隐私零泄露\n¥268 买断 · 7天免费试用"
-            android:textColor="#AAA"
-            android:textSize="13sp" />
+            android:textColor="@color/text_hint"
+            android:textSize="12sp" />
 
     </LinearLayout>
 </ScrollView>

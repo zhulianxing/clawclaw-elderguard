@@ -20,6 +20,8 @@ class ContactActivity : AppCompatActivity() {
     private lateinit var recyclerView: RecyclerView
     private lateinit var adapter: ContactAdapter
     private lateinit var fabAdd: FloatingActionButton
+    private lateinit var layoutEmpty: View
+    private var contacts: MutableList<AppConfig.Contact> = mutableListOf()
     private val config by lazy { AppConfig.getInstance(this) }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -28,17 +30,33 @@ class ContactActivity : AppCompatActivity() {
 
         recyclerView = findViewById(R.id.rv_contacts)
         fabAdd = findViewById(R.id.fab_add)
+        layoutEmpty = findViewById(R.id.layout_empty)
 
-        adapter = ContactAdapter(config.getContacts().toMutableList()) { position ->
+        adapter = ContactAdapter(contacts) { position ->
             deleteContact(position)
         }
 
         recyclerView.layoutManager = LinearLayoutManager(this)
         recyclerView.adapter = adapter
 
-        fabAdd.setOnClickListener {
-            showAddDialog()
-        }
+        fabAdd.setOnClickListener { showAddDialog() }
+
+        val btnFirst = findViewById<android.widget.Button>(R.id.btn_add_first)
+        btnFirst.setOnClickListener { showAddDialog() }
+
+        loadContacts()
+    }
+
+    override fun onResume() {
+        super.onResume()
+        loadContacts()
+    }
+
+    private fun loadContacts() {
+        contacts = config.getContacts().toMutableList()
+        adapter.updateData(contacts)
+        layoutEmpty.visibility = if (contacts.isEmpty()) View.VISIBLE else View.GONE
+        recyclerView.visibility = if (contacts.isEmpty()) View.GONE else View.VISIBLE
     }
 
     private fun showAddDialog() {
