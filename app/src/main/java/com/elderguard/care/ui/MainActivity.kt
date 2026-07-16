@@ -17,6 +17,7 @@ import androidx.core.content.ContextCompat
 import com.elderguard.care.R
 import com.elderguard.care.data.AppConfig
 import com.elderguard.care.data.LicenseManager
+import com.elderguard.care.data.Web3LicenseManager
 import com.elderguard.care.service.ElderMonitorService
 
 class MainActivity : AppCompatActivity() {
@@ -39,6 +40,7 @@ class MainActivity : AppCompatActivity() {
     private var detailsExpanded = false
 
     private val licenseManager by lazy { LicenseManager.getInstance(this) }
+    private val web3License by lazy { Web3LicenseManager(this, packageName) }
     private val config by lazy { AppConfig.getInstance(this) }
 
     private val permissionLauncher = registerForActivityResult(
@@ -182,6 +184,48 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun showActivationDialog() {
+        val options = arrayOf("🔗 导入钱包验证NFT (daix.fun)", "🔑 输入离线激活码")
+        AlertDialog.Builder(this)
+            .setTitle("激活长者守护")
+            .setItems(options) { _, which ->
+                if (which == 0) showWalletImport() else showCodeInput()
+            }
+            .setNegativeButton("取消", null)
+            .show()
+    }
+
+    private fun showWalletImport() {
+        val input = EditText(this).apply {
+            hint = "粘贴钱包私钥（0x开头，64位hex）"
+            setPadding(48, 32, 48, 32)
+        }
+        AlertDialog.Builder(this)
+            .setTitle("导入Polygon钱包")
+            .setMessage("需要有daix.fun购买的NFT数字凭证\n私钥仅本地存储，不上传")
+            .setView(input)
+            .setPositiveButton("导入") { _, _ ->
+                val key = input.text.toString().trim()
+                if (web3License.importWallet(key)) {
+                    Toast.makeText(this, "钱包已导入，正在验证NFT...", Toast.LENGTH_SHORT).show()
+                    web3License.verifyLicense { verified, msg, _ ->
+                        runOnUiThread {
+                            if (verified) {
+                                Toast.makeText(this, "✅ $msg", Toast.LENGTH_LONG).show()
+                                checkLicense()
+                            } else {
+                                Toast.makeText(this, "❌ $msg", Toast.LENGTH_LONG).show()
+                            }
+                        }
+                    }
+                } else {
+                    Toast.makeText(this, "私钥格式无效", Toast.LENGTH_SHORT).show()
+                }
+            }
+            .setNegativeButton("取消", null)
+            .show()
+    }
+
+    private fun showCodeInput() {
         ActivationDialogFragment().show(supportFragmentManager, "activation")
     }
 
@@ -215,16 +259,22 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun checkLicense() {
-        if (!licenseManager.isUsable()) {
-            tvLicense.text = "⚠ 试用已过期，请激活"
-            tvLicense.setTextColor(getColor(R.color.alert_red))
-        } else if (licenseManager.isActivated()) {
+        if (licenseManager.isActivated() || web3License.isVerified()) {
             tvLicense.text = "✅ 已激活 · 永久授权"
             tvLicense.setTextColor(getColor(R.color.safe_green))
+        } else if (!licenseManager.isUsable()) {
+            tvLicense.text = "⚠ 试用已过期，请激活"
+            tvLicense.setTextColor(getColor(R.color.alert_red))
         } else {
             val days = licenseManager.getRemainingDays()
             tvLicense.text = "试用期剩余 $days 天"
             tvLicense.setTextColor(getColor(R.color.warning_orange))
+        }
+        // 后台链上验证
+        if (!web3License.isVerified() && web3License.hasWallet()) {
+            web3License.verifyLicense { verified, _, _ ->
+                if (verified) runOnUiThread { checkLicense() }
+            }
         }
     }
 
