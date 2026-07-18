@@ -5,6 +5,7 @@ import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.PendingIntent
 import android.app.Service
+import android.app.Activity
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
@@ -89,6 +90,9 @@ class ElderMonitorService : Service(), LifecycleOwner {
     }
 
     private fun startMonitoring() {
+        // 注册 SMS 状态接收器
+        registerSmsReceivers()
+
         // 初始化姿态分析
         if (config.isFallDetectionEnabled() || config.isStillnessDetectionEnabled()) {
             if (poseAnalyzer.init()) {
@@ -223,7 +227,36 @@ class ElderMonitorService : Service(), LifecycleOwner {
 
         for (contact in contacts) {
             try {
-                smsManager.sendTextMessage(contact.phone, null, message, null, null)
+                // Android 10+ 要求必须提供 sentIntent，否则短信会被系统静默丢弃
+                val sentIntent = Intent("com.elderguard.care.SMS_SENT").apply {
+                    putExtra("contact_name", contact.name)
+                    putExtra("contact_phone", contact.phone)
+                }
+                val sentPendingIntent = PendingIntent.getBroadcast(
+                    this,
+                    contact.phone.hashCode(),
+                    sentIntent,
+                    PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+                )
+
+                val deliveryIntent = Intent("com.elderguard.care.SMS_DELIVERED").apply {
+                    putExtra("contact_name", contact.name)
+                    putExtra("contact_phone", contact.phone)
+                }
+                val deliveryPendingIntent = PendingIntent.getBroadcast(
+                    this,
+                    contact.phone.hashCode() + 10000,
+                    deliveryIntent,
+                    PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+                )
+
+                smsManager.sendTextMessage(
+                    contact.phone,
+                    null,
+                    message,
+                    sentPendingIntent,
+                    deliveryPendingIntent
+                )
                 Log.i(TAG, "SMS sent to ${contact.name} (${contact.phone})")
             } catch (e: Exception) {
                 Log.e(TAG, "SMS failed for ${contact.phone}", e)
@@ -232,6 +265,7 @@ class ElderMonitorService : Service(), LifecycleOwner {
     }
 
     private fun stopMonitoring() {
+        unregisterSmsReceivers()
         voiceDetector.stop()
         poseAnalyzer.release()
         cameraExecutor.shutdown()
@@ -277,6 +311,66 @@ class ElderMonitorService : Service(), LifecycleOwner {
     }
 
     override fun onBind(intent: Intent?): IBinder? = null
+
+    // ── SMS 发送状态接收器 ──
+    inner class SmsSentReceiver : BroadcastReceiver() {
+        override fun onReceive(context: Context, intent: Intent) {
+            val name = intent.getStringExtra("contact_name") ?: "unknown"
+            val phone = intent.getStringExtra("contact_phone") ?: ""
+            when (resultCode) {
+                Activity.RESULT_OK ->
+                    Log.i(TAG, "✅ SMS delivered to $name ($phone)")
+                SmsManager.RESULT_ERROR_GENERIC_FAILURE ->
+                    Log.e(TAG, "❌ SMS generic failure for $name ($phone), errorCode=$resultCode")
+                SmsManager.RESULT_ERROR_NO_SERVICE ->
+                    Log.e(TAG, "❌ SMS no service for $name ($phone)")
+                SmsManager.RESULT_ERROR_NULL_PDU ->
+                    Log.e(TAG, "❌ SMS null PDU for $name ($phone)")
+                SmsManager.RESULT_ERROR_RADIO_OFF ->
+                    Log.e(TAG, "❌ SMS radio off for $name ($phone)")
+                else ->
+                    Log.e(TAG, "❌ SMS unknown error for $name ($phone), code=$resultCode")
+            }
+        }
+    }
+
+    inner class SmsDeliveredReceiver : BroadcastReceiver() {
+        override fun onReceive(context: Context, intent: Intent) {
+            val name = intent.getStringExtra("contact_name") ?: "unknown"
+            val phone = intent.getStringExtra("contact_phone") ?: ""
+            when (resultCode) {
+                Activity.RESULT_OK ->
+                    Log.i(TAG, "✅ SMS delivery confirmed for $name ($phone)")
+                Activity.RESULT_CANCELED ->
+                    Log.w(TAG, "⚠ SMS delivery failed for $name ($phone)")
+            }
+        }
+    }
+
+    private var smsSentReceiver: SmsSentReceiver? = null
+    private var smsDeliveredReceiver: SmsDeliveredReceiver? = null
+
+    private fun registerSmsReceivers() {
+        smsSentReceiver = SmsSentReceiver()
+        smsDeliveredReceiver = SmsDeliveredReceiver()
+        val sentFilter = IntentFilter("com.elderguard.care.SMS_SENT")
+        val deliveredFilter = IntentFilter("com.elderguard.care.SMS_DELIVERED")
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            registerReceiver(smsSentReceiver, sentFilter, Context.RECEIVER_NOT_EXPORTED)
+            registerReceiver(smsDeliveredReceiver, deliveredFilter, Context.RECEIVER_NOT_EXPORTED)
+        } else {
+            registerReceiver(smsSentReceiver, sentFilter)
+            registerReceiver(smsDeliveredReceiver, deliveredFilter)
+        }
+        Log.i(TAG, "SMS receivers registered")
+    }
+
+    private fun unregisterSmsReceivers() {
+        smsSentReceiver?.let { try { unregisterReceiver(it) } catch (_: Exception) {} }
+        smsDeliveredReceiver?.let { try { unregisterReceiver(it) } catch (_: Exception) {} }
+        smsSentReceiver = null
+        smsDeliveredReceiver = null
+    }
 
     // ── ADB 模拟测试 ──
     inner class SimulateReceiver : BroadcastReceiver() {
