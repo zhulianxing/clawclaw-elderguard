@@ -36,6 +36,7 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 import java.util.concurrent.Executors
+import com.google.common.util.concurrent.ListenableFuture
 
 class ElderMonitorService : Service(), LifecycleOwner {
 
@@ -61,6 +62,7 @@ class ElderMonitorService : Service(), LifecycleOwner {
     private var lastAlertTime = 0L
     private var alertCooldownMs = 60_000L // 1分钟冷却
     private var simulateReceiver: SimulateReceiver? = null
+    private var cameraProviderFuture: ListenableFuture<ProcessCameraProvider>? = null
 
     override fun onCreate() {
         super.onCreate()
@@ -123,11 +125,18 @@ class ElderMonitorService : Service(), LifecycleOwner {
     }
 
     private fun startCamera() {
-        val cameraProviderFuture = ProcessCameraProvider.getInstance(this)
+        val future = ProcessCameraProvider.getInstance(this)
+        cameraProviderFuture = future
 
-        cameraProviderFuture.addListener({
+        future.addListener({
             try {
-                val cameraProvider = cameraProviderFuture.get()
+                // Guard: check lifecycle state before binding
+                if (lifecycle.currentState < Lifecycle.State.STARTED) {
+                    Log.w(TAG, "Lifecycle already ${lifecycle.currentState}, skipping camera bind")
+                    return@addListener
+                }
+
+                val cameraProvider = future.get()
 
                 val resolutionSelector = androidx.camera.core.resolutionselector.ResolutionSelector.Builder()
                     .setResolutionStrategy(androidx.camera.core.resolutionselector.ResolutionStrategy(
@@ -306,6 +315,14 @@ class ElderMonitorService : Service(), LifecycleOwner {
 
     override fun onDestroy() {
         super.onDestroy()
+        // Cancel pending camera provider future to prevent lifecycle crash
+        cameraProviderFuture?.let {
+            if (!it.isDone) {
+                it.cancel(true)
+                Log.i(TAG, "Camera provider future cancelled")
+            }
+        }
+        cameraProviderFuture = null
         lifecycleRegistry.handleLifecycleEvent(Lifecycle.Event.ON_DESTROY)
         stopMonitoring()
     }
