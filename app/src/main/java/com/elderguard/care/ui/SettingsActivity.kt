@@ -1,6 +1,8 @@
 package com.elderguard.care.ui
 
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
 import android.widget.*
 import androidx.appcompat.app.AppCompatActivity
 import com.elderguard.care.R
@@ -21,6 +23,12 @@ class SettingsActivity : AppCompatActivity() {
     private lateinit var tvPoseState: TextView
     private lateinit var etSmsTemplate: EditText
     private lateinit var btnSaveSms: Button
+
+    // Debounce: delay SharedPreferences writes while user is still dragging
+    private val handler = Handler(Looper.getMainLooper())
+    private var pendingStillness: Runnable? = null
+    private var pendingAlertDelay: Runnable? = null
+    private val DEBOUNCE_MS = 300L
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -76,26 +84,39 @@ class SettingsActivity : AppCompatActivity() {
             updatePoseState()
         }
 
-        // 静止阈值
+        // 静止阈值 — debounced to avoid hammering SharedPreferences on every tick
         sbStillness.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
             override fun onProgressChanged(sb: SeekBar?, progress: Int, fromUser: Boolean) {
                 val minutes = progress + 5
                 tvStillnessValue.text = "$minutes 分钟"
-                config.setStillnessThresholdMinutes(minutes)
+                pendingStillness?.let { handler.removeCallbacks(it) }
+                val r = Runnable { config.setStillnessThresholdMinutes(minutes) }
+                pendingStillness = r
+                handler.postDelayed(r, DEBOUNCE_MS)
             }
             override fun onStartTrackingTouch(sb: SeekBar?) {}
-            override fun onStopTrackingTouch(sb: SeekBar?) {}
+            override fun onStopTrackingTouch(sb: SeekBar?) {
+                // Flush immediately when user lifts finger
+                pendingStillness?.let { handler.removeCallbacks(it); it.run() }
+                pendingStillness = null
+            }
         })
 
-        // 告警延迟
+        // 告警延迟 — debounced
         sbAlertDelay.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
             override fun onProgressChanged(sb: SeekBar?, progress: Int, fromUser: Boolean) {
                 val seconds = progress * 5 + 10
                 tvAlertDelayValue.text = "$seconds 秒"
-                config.setAlertDelaySeconds(seconds)
+                pendingAlertDelay?.let { handler.removeCallbacks(it) }
+                val r = Runnable { config.setAlertDelaySeconds(seconds) }
+                pendingAlertDelay = r
+                handler.postDelayed(r, DEBOUNCE_MS)
             }
             override fun onStartTrackingTouch(sb: SeekBar?) {}
-            override fun onStopTrackingTouch(sb: SeekBar?) {}
+            override fun onStopTrackingTouch(sb: SeekBar?) {
+                pendingAlertDelay?.let { handler.removeCallbacks(it); it.run() }
+                pendingAlertDelay = null
+            }
         })
 
         updatePoseState()
@@ -119,5 +140,14 @@ class SettingsActivity : AppCompatActivity() {
     override fun onResume() {
         super.onResume()
         updatePoseState()
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        // Flush any pending writes before the activity is destroyed
+        pendingStillness?.let { handler.removeCallbacks(it); it.run() }
+        pendingAlertDelay?.let { handler.removeCallbacks(it); it.run() }
+        pendingStillness = null
+        pendingAlertDelay = null
     }
 }
