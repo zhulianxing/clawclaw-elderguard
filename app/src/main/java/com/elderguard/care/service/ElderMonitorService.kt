@@ -15,6 +15,7 @@ import android.os.Build
 import android.os.IBinder
 import android.os.Handler
 import android.os.Looper
+import android.os.PowerManager
 import android.os.SystemClock
 import android.telephony.SmsManager
 import android.util.Log
@@ -63,6 +64,7 @@ class ElderMonitorService : Service(), LifecycleOwner {
     private var alertCooldownMs = 60_000L // 1分钟冷却
     private var simulateReceiver: SimulateReceiver? = null
     private var cameraProviderFuture: ListenableFuture<ProcessCameraProvider>? = null
+    private var wakeLock: PowerManager.WakeLock? = null
 
     override fun onCreate() {
         super.onCreate()
@@ -92,6 +94,14 @@ class ElderMonitorService : Service(), LifecycleOwner {
     }
 
     private fun startMonitoring() {
+        // WakeLock 保持 CPU 运行（10分钟超时，参考计数模式）
+        val powerManager = getSystemService(Context.POWER_SERVICE) as PowerManager
+        wakeLock = powerManager.newWakeLock(
+            PowerManager.PARTIAL_WAKE_LOCK,
+            "ElderGuard::MonitorWakeLock"
+        )
+        wakeLock?.acquire(10 * 60 * 1000L) // 10分钟
+
         // 注册 SMS 状态接收器
         registerSmsReceivers()
 
@@ -278,8 +288,22 @@ class ElderMonitorService : Service(), LifecycleOwner {
         voiceDetector.stop()
         poseAnalyzer.release()
         cameraExecutor.shutdown()
+        releaseWakeLock()
         config.setMonitoringEnabled(false)
         Log.i(TAG, "Monitoring stopped")
+    }
+
+    private fun releaseWakeLock() {
+        try {
+            if (wakeLock != null && wakeLock?.isHeld == true) {
+                wakeLock?.release()
+                Log.i(TAG, "WakeLock released")
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "WakeLock release error", e)
+        } finally {
+            wakeLock = null
+        }
     }
 
     private fun createNotificationChannel() {
@@ -323,6 +347,7 @@ class ElderMonitorService : Service(), LifecycleOwner {
             }
         }
         cameraProviderFuture = null
+        releaseWakeLock()
         lifecycleRegistry.handleLifecycleEvent(Lifecycle.Event.ON_DESTROY)
         stopMonitoring()
     }
