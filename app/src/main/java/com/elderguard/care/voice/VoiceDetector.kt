@@ -126,7 +126,12 @@ class VoiceDetector private constructor(private val context: Context) {
 
         try {
             recognizer = Recognizer(m, 16000.0f)
+        } catch (e: Exception) {
+            Log.e(TAG, "Recognizer creation failed", e)
+            return
+        }
 
+        try {
             speechService = SpeechService(recognizer, 16000.0f)
             speechService?.startListening(object : RecognitionListener {
                 override fun onPartialResult(hypothesis: String?) {
@@ -153,7 +158,12 @@ class VoiceDetector private constructor(private val context: Context) {
 
             Log.i(TAG, "✅ Vosk 离线语音识别已启动（关键字: $keywords）")
         } catch (e: Exception) {
-            Log.e(TAG, "startRecognition failed", e)
+            Log.e(TAG, "startRecognition failed, releasing resources", e)
+            // Ensure AudioRecord inside SpeechService is released on failure
+            try { speechService?.shutdown() } catch (_: Exception) {}
+            speechService = null
+            try { recognizer?.close() } catch (_: Exception) {}
+            recognizer = null
         }
     }
 

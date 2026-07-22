@@ -43,7 +43,12 @@ import org.json.JSONObject;
 public class Web3LicenseManager {
 
     // ===== 合约配置 =====
-    private static final String RPC_URL = "https://polygon-bor-rpc.publicnode.com";
+    private static final String[] RPC_URLS = {
+            "https://polygon-bor-rpc.publicnode.com",
+            "https://rpc.ankr.com/polygon",
+            "https://polygon.llamarpc.com",
+            "https://polygon-mainnet.g.alchemy.com/v2/demo"
+    };
     private static final String LICENSE_QUERY = "0xb36Fd748026097e0F18A644452E739DECf4d0686";
     private static final String LICENSE_NFT = "0x7Ed65226C66b188f66AA0e5483917B1C33a41225";
     private static final long CHAIN_ID = 137;
@@ -256,13 +261,19 @@ public class Web3LicenseManager {
 
         RequestBody body = RequestBody.create(req.toString(),
                 MediaType.parse("application/json"));
-        Request request = new Request.Builder().url(RPC_URL).post(body).build();
 
-        try (Response response = http.newCall(request).execute()) {
-            JSONObject resp = new JSONObject(response.body().string());
-            if (resp.has("error")) return null;
-            return resp.getString("result");
+        Exception lastException = null;
+        for (String rpcUrl : RPC_URLS) {
+            Request request = new Request.Builder().url(rpcUrl).post(body).build();
+            try (Response response = http.newCall(request).execute()) {
+                JSONObject resp = new JSONObject(response.body().string());
+                if (resp.has("error")) return null;
+                return resp.getString("result");
+            } catch (Exception e) {
+                lastException = e;
+            }
         }
+        throw lastException != null ? lastException : new Exception("All RPC endpoints failed");
     }
 
     private long getAppIdByPackageName() throws Exception {
