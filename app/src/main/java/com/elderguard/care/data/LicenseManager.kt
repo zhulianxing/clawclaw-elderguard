@@ -11,7 +11,11 @@ class LicenseManager private constructor(context: Context) {
         context.getSharedPreferences("elder_guard_license", Context.MODE_PRIVATE)
 
     companion object {
-        private const val SALT = "ELDERGUARD2026"
+        // SALT 分片存储，增加反编译静态扫描难度（非终极方案，应后续移入 Native 层）
+        private val SALT: String by lazy {
+            // 运行时拼接，避免单字符串在反编译后直接可见
+            charArrayOf('A','n','N','e','s','t','_','2','0','2','6','_','s','a','l','t').concatToString()
+        }
         private const val KEY_ACTIVATED = "activated"
         private const val KEY_ACTIVATION_CODE = "activation_code"
         private const val KEY_FIRST_LAUNCH = "first_launch"
@@ -58,39 +62,40 @@ class LicenseManager private constructor(context: Context) {
     }
 
     /**
-     * 激活码格式: EG00-XXXX-XX
+     * 激活码格式: EG00-XXXX-XXXXXXXX
      * 前缀: EG00
      * XXXX: 2位随机hex（大写）+ 2位随机hex（大写）
-     * XX: SHA-256(SALT + payload + SALT) 前2位hex
-     * 
-     * 完整验证: SHA-256(SALT + payload + SALT) 前6位hex == checksum
+     * XXXXXXXX: SHA-256(SALT + payload + SALT) 前8位hex
+     *
+     * 完整验证: SHA-256(SALT + payload + SALT) 前12位hex == checksum
      */
-    private fun isValidCode(code: String): Boolean {
+    fun isValidCode(code: String): Boolean {
         val upper = code.uppercase().replace(" ", "")
-        
-        // 格式校验: EG00-XXXX-XX
-        val regex = Regex("^EG00-([0-9A-F]{4})-([0-9A-F]{2})$")
-        val match = regex.matchEntire(upper) ?: return false
-        
-        val payload = match.groupValues[1] // XXXX
-        val checksum = match.groupValues[2] // XX
 
-        // 计算校验: SHA-256(SALT + payload + SALT) 前2位hex
+        // 格式校验: EG00-XXXX-XXXXXXXX
+        val regex = Regex("^EG00-([0-9A-F]{4})-([0-9A-F]{8})$")
+        val match = regex.matchEntire(upper) ?: return false
+
+        val payload = match.groupValues[1] // XXXX
+        val checksum = match.groupValues[2] // XXXXXXXX
+
+        // 计算校验: SHA-256(SALT + payload + SALT) 前8位hex
         val input = "$SALT$payload$SALT"
         val hash = sha256(input)
-        val expectedChecksum = hash.take(2).uppercase()
-        
+        val expectedChecksum = hash.take(8).uppercase()
+
         return checksum == expectedChecksum
     }
 
     /**
      * 生成激活码（用于调试/销售）
      */
-    fun generateCode(): String {
+    // 仅供开发测试，发布版本应移除或移入 Native 层
+    private fun generateCode(): String {
         val random = (0..0xFFFF).random().toString(16).uppercase().padStart(4, '0')
         val input = "$SALT$random$SALT"
         val hash = sha256(input)
-        val checksum = hash.take(2).uppercase()
+        val checksum = hash.take(8).uppercase()
         return "EG00-$random-$checksum"
     }
 

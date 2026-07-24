@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 安巢 App Icon 单色版（Android 13+ 主题图标用） -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+
+    <!-- 房屋屋顶 -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M54,28 L78,46 L30,46 Z"/>
+
+    <!-- 屋身 -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M34,46 L74,46 L74,78 L34,78 Z"/>
+
+    <!-- 心电波（镂空效果） -->
+    <path
+        android:strokeColor="#FFFFFF"
+        android:strokeWidth="3"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round"
+        android:fillColor="#00000000"
+        android:pathData="M40,62 L48,62 L51,55 L55,70 L59,55 L62,62 L72,62"/>
+
+    <!-- 烟囱 -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M62,32 L68,32 L68,42 L62,42 Z"/>
+
+</vector>

@@ -1,7 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">长者守护</string>
+    <string name="app_name">安巢</string>
     <string name="monitoring_active">监护运行中</string>
     <string name="start_monitoring">启动监护</string>
     <string name="stop_monitoring">停止监护</string>
+    <string name="privacy_policy_content">安巢隐私政策\n\n最后更新：2026年7月\n\n1. 数据收集\n安巢是一款端侧视觉智能老人监护应用。我们坚持“隐私零泄露”原则：所有摄像头画面、语音识别、姿态数据均在设备本地处理，不会上传到任何服务器。\n\n2. 摄像头使用\n摄像头画面仅用于本地姿态识别（跌倒检测、静止检测），不会拍照、录像或上传。识别完成后画面立即丢弃，不留存任何视觉记录。\n\n3. 语音识别\n使用 Vosk 离线中文模型，所有语音识别在本地完成。仅识别预设的求救关键词（“救命”“帮帮我”等），不会录制、保存或上传完整语音。\n\n4. 联系人数据\n紧急联系人的姓名和手机号仅保存在本设备，使用应用私有存储，不会同步到云端。卸载应用后数据自动清除。\n\n5. 短信与电话权限\n仅在检测到跌倒、语音求救或长时间静止告警时，自动向已配置的紧急联系人发送短信并拨打第一联系人电话。不会用于任何其他用途。\n\n6. 钱包私钥\n如果使用 NFT 激活方式，Polygon 钱包私钥使用 Android Keystore + EncryptedSharedPreferences（AES256_GCM）加密存储在本设备，不会上传。\n\n7. 加速度计数据\n用于跌倒检测的传感器融合，数据在内存中实时处理，不保存、不上传。\n\n8. 数据共享\n我们不与任何第三方共享用户数据。本应用完全离线运行，无任何后台数据上报。\n\n9. 数据安全\n敏感数据（私钥、联系人）使用 AES256_GCM 加密存储。应用启用 R8 代码混淆，关键校验逻辑受保护。\n\n10. 儿童隐私\n本应用面向老人监护场景，不针对儿童。不会 knowingly 收集儿童信息。\n\n11. 政策变更\n我们可能更新本政策。更新后会在应用内提示，继续使用即视为同意新政策。\n\n12. 联系我们\n如有疑问，请联系：support@clawclaw.tech\n\n© 2026 clawclaw.tech</string>
 </resources>

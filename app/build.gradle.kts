@@ -1,3 +1,4 @@
+import java.util.Properties
 plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
@@ -19,31 +20,31 @@ android {
         applicationId = "com.elderguard.care"
         minSdk = 26
         targetSdk = 35
-        versionCode = 1
-        versionName = "1.0.0"
+        versionCode = 3
+        versionName = "1.0.2"
 
         ndk {
             abiFilters += listOf("arm64-v8a")
         }
     }
 
+    val localProps = Properties().apply {
+        val f = rootProject.file("local.properties")
+        if (f.exists()) load(f.inputStream())
+    }
     signingConfigs {
         create("release") {
-            storeFile = file("../zhuapaq-release.keystore")
-            storePassword = "123456"
-            keyAlias = "zhuapaq"
-            keyPassword = "123456"
+            storeFile = file(localProps.getProperty("KEYSTORE_PATH", "zhuapaq-release.keystore"))
+            storePassword = localProps.getProperty("KEYSTORE_PASS", System.getenv("KEYSTORE_PASS") ?: "")
+            keyAlias = localProps.getProperty("KEY_ALIAS", "zhuapaq")
+            keyPassword = localProps.getProperty("KEY_PASS", System.getenv("KEY_PASS") ?: "")
         }
     }
 
     buildTypes {
-        debug {
-            signingConfig = signingConfigs.getByName("release")
-        }
-
         release {
-            isMinifyEnabled = false
-            isShrinkResources = false
+            isMinifyEnabled = true
+            isShrinkResources = true
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
@@ -83,4 +84,7 @@ dependencies {
     implementation("com.squareup.okhttp3:okhttp:4.12.0")
     implementation("net.java.dev.jna:jna:5.13.0@aar")
     implementation("com.alphacephei:vosk-android:0.3.47")
+    implementation("androidx.security:security-crypto:1.1.0-alpha06")
+    testImplementation("junit:junit:4.13.2")
+    testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.7.3")
 }

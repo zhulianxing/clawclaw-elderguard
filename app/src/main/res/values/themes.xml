@@ -1,10 +1,17 @@
 <?xml version="1.0" encoding="utf-8"?>
-<resources>
-    <style name="Theme.ElderGuard" parent="Theme.AppCompat.Light.DarkActionBar">
+<resources xmlns:tools="http://schemas.android.com/tools">
+    <style name="Theme.ElderGuard" parent="Theme.AppCompat.Light.NoActionBar">
         <item name="colorPrimary">@color/primary</item>
         <item name="colorPrimaryDark">@color/primary_dark</item>
         <item name="colorAccent">@color/accent</item>
         <item name="android:textColorPrimary">@color/text_primary</item>
+        <item name="windowActionBar">false</item>
+        <item name="windowNoTitle">true</item>
+        <item name="android:windowBackground">@color/background</item>
+        <!-- 让状态栏图标显示为深色（浅色背景上） -->
+        <item name="android:windowLightStatusBar" tools:targetApi="m">true</item>
+        <item name="android:statusBarColor">@color/surface</item>
+        <item name="android:navigationBarColor">@color/background</item>
     </style>
 
     <style name="Theme.ElderGuard.Fullscreen" parent="Theme.AppCompat.Light.NoActionBar">
@@ -13,7 +20,4 @@
         <item name="android:windowTranslucentNavigation">true</item>
     </style>
 
-    <color name="safe_green">#4CAF50</color>
-    <color name="warning_orange">#FF9800</color>
-    <color name="alert_red">#F44336</color>
 </resources>

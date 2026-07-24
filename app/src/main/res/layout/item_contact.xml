@@ -1,41 +1,77 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:orientation="horizontal"
-    android:padding="16dp"
-    android:gravity="center_vertical">
+    android:gravity="center_vertical"
+    android:padding="@dimen/space_md"
+    android:background="?attr/selectableItemBackground">
 
+    <!-- 头像 -->
+    <FrameLayout
+        android:layout_width="48dp"
+        android:layout_height="48dp"
+        android:background="@drawable/bg_avatar">
+
+        <ImageView
+            android:layout_width="28dp"
+            android:layout_height="28dp"
+            android:layout_gravity="center"
+            android:contentDescription="@null"
+            android:src="@drawable/ic_contacts"
+            app:tint="@android:color/white" />
+
+    </FrameLayout>
+
+    <!-- 姓名 + 手机号 -->
     <LinearLayout
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:layout_weight="1"
+        android:layout_marginStart="@dimen/space_md"
         android:orientation="vertical">
 
         <TextView
             android:id="@+id/tv_contact_name"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:textColor="#333"
-            android:textSize="18sp"
-            android:textStyle="bold" />
+            android:textColor="@color/text_primary"
+            android:textSize="@dimen/text_body_lg"
+            android:textStyle="bold"
+            android:singleLine="true"
+            android:ellipsize="end" />
 
         <TextView
             android:id="@+id/tv_contact_phone"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginTop="4dp"
-            android:textColor="#888"
-            android:textSize="16sp" />
+            android:layout_marginTop="2dp"
+            android:textColor="@color/text_secondary"
+            android:textSize="@dimen/text_body" />
 
     </LinearLayout>
 
+    <!-- 编辑 -->
+    <ImageButton
+        android:id="@+id/btn_edit"
+        android:layout_width="32dp"
+        android:layout_height="32dp"
+        android:layout_marginStart="@dimen/space_sm"
+        android:background="?attr/selectableItemBackgroundBorderless"
+        android:contentDescription="@null"
+        android:src="@android:drawable/ic_menu_edit"
+        app:tint="@color/text_secondary" />
+
+    <!-- 删除 -->
     <ImageButton
         android:id="@+id/btn_delete"
-        android:layout_width="48dp"
-        android:layout_height="48dp"
+        android:layout_width="32dp"
+        android:layout_height="32dp"
+        android:layout_marginStart="@dimen/space_sm"
         android:background="?attr/selectableItemBackgroundBorderless"
+        android:contentDescription="@null"
         android:src="@android:drawable/ic_menu_delete"
-        android:tint="#F44336" />
+        app:tint="@color/alert_red" />
 
 </LinearLayout>

@@ -24,20 +24,23 @@ class MainActivity : AppCompatActivity() {
 
     private lateinit var btnStart: Button
     private lateinit var btnStop: Button
-    private lateinit var btnContacts: Button
-    private lateinit var btnSettings: Button
-    private lateinit var btnActivate: Button
-    private lateinit var btnLogs: Button
+    private lateinit var btnContacts: View
+    private lateinit var btnSettings: View
+    private lateinit var btnActivate: View
+    private lateinit var btnLogs: View
     private lateinit var btnPreview: Button
     private lateinit var tvStatus: TextView
     private lateinit var tvLicense: TextView
     private lateinit var tvLog: TextView
     private lateinit var layoutRecentLog: View
     private lateinit var indicatorDot: View
+    private lateinit var cardMonitor: View
     private lateinit var headerDetails: View
     private lateinit var contentDetails: View
     private lateinit var tvDetailsArrow: TextView
     private var detailsExpanded = false
+
+    private val REQUEST_CODE_NOTIFICATIONS = 1001
 
     private val licenseManager by lazy { LicenseManager.getInstance(this) }
     private val web3License by lazy { Web3LicenseManager(this, packageName) }
@@ -65,6 +68,11 @@ class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
+        // 使用自定义 Toolbar 替代默认 ActionBar
+        findViewById<androidx.appcompat.widget.Toolbar?>(R.id.toolbar)?.let {
+            setSupportActionBar(it)
+            supportActionBar?.setDisplayShowTitleEnabled(false)
+        }
 
         // 注册 UI 刷新广播
         if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU) {
@@ -79,6 +87,17 @@ class MainActivity : AppCompatActivity() {
         initViews()
         updateUI()
         checkLicense()
+
+        // Android 13+ 主动请求通知权限
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU) {
+            if (checkSelfPermission(android.Manifest.permission.POST_NOTIFICATIONS) !=
+                    android.content.pm.PackageManager.PERMISSION_GRANTED) {
+                requestPermissions(
+                    arrayOf(android.Manifest.permission.POST_NOTIFICATIONS),
+                    REQUEST_CODE_NOTIFICATIONS
+                )
+            }
+        }
     }
 
     private val uiRefreshReceiver = object : android.content.BroadcastReceiver() {
@@ -100,6 +119,7 @@ class MainActivity : AppCompatActivity() {
         tvLog = findViewById(R.id.tv_log)
         layoutRecentLog = findViewById(R.id.layout_recent_log)
         indicatorDot = findViewById(R.id.indicator_dot)
+        cardMonitor = findViewById(R.id.card_monitor)
         headerDetails = findViewById(R.id.header_details)
         contentDetails = findViewById(R.id.content_details)
         tvDetailsArrow = findViewById(R.id.tv_details_arrow)
@@ -107,7 +127,7 @@ class MainActivity : AppCompatActivity() {
         headerDetails.setOnClickListener {
             detailsExpanded = !detailsExpanded
             contentDetails.visibility = if (detailsExpanded) View.VISIBLE else View.GONE
-            tvDetailsArrow.text = if (detailsExpanded) "▲" else "▼"
+            tvDetailsArrow.text = if (detailsExpanded) "收起" else "展开"
         }
 
         btnStart.setOnClickListener { checkPermissionsAndStart() }
@@ -130,7 +150,8 @@ class MainActivity : AppCompatActivity() {
         val permissions = mutableListOf(
             Manifest.permission.CAMERA,
             Manifest.permission.RECORD_AUDIO,
-            Manifest.permission.SEND_SMS
+            Manifest.permission.SEND_SMS,
+            Manifest.permission.CALL_PHONE
         )
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             permissions.add(Manifest.permission.POST_NOTIFICATIONS)
@@ -184,14 +205,35 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun showActivationDialog() {
-        val options = arrayOf("🔗 导入钱包验证NFT (daix.fun)", "🔑 输入离线激活码")
+        val options = arrayOf(
+            "🌐 前往官网 ClawClaw.tech 激活",
+            "🔗 导入钱包验证 NFT (daix.fun)",
+            "🔑 输入离线激活码"
+        )
         AlertDialog.Builder(this)
-            .setTitle("激活长者守护")
+            .setTitle("激活安巢")
             .setItems(options) { _, which ->
-                if (which == 0) showWalletImport() else showCodeInput()
+                when (which) {
+                    0 -> openWebsite()
+                    1 -> showWalletImport()
+                    2 -> showCodeInput()
+                }
             }
             .setNegativeButton("取消", null)
             .show()
+    }
+
+    /**
+     * 打开官网 ClawClaw.tech 激活
+     */
+    private fun openWebsite() {
+        try {
+            val intent = Intent(Intent.ACTION_VIEW, android.net.Uri.parse("https://www.clawclaw.tech"))
+                .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            startActivity(intent)
+        } catch (e: Exception) {
+            Toast.makeText(this, "未找到浏览器应用", Toast.LENGTH_SHORT).show()
+        }
     }
 
     private fun showWalletImport() {
@@ -260,10 +302,10 @@ class MainActivity : AppCompatActivity() {
 
     private fun checkLicense() {
         if (licenseManager.isActivated() || web3License.isVerified()) {
-            tvLicense.text = "✅ 已激活 · 永久授权"
+            tvLicense.text = "已激活 · 永久授权"
             tvLicense.setTextColor(getColor(R.color.safe_green))
         } else if (!licenseManager.isUsable()) {
-            tvLicense.text = "⚠ 试用已过期，请激活"
+            tvLicense.text = "试用已过期，请激活"
             tvLicense.setTextColor(getColor(R.color.alert_red))
         } else {
             val days = licenseManager.getRemainingDays()
@@ -283,13 +325,19 @@ class MainActivity : AppCompatActivity() {
         btnStart.visibility = if (monitoring) View.GONE else View.VISIBLE
         btnStop.visibility = if (monitoring) View.VISIBLE else View.GONE
         btnPreview.visibility = if (monitoring) View.VISIBLE else View.GONE
-        tvStatus.text = if (monitoring) "🟢 监护中" else "⚪ 待启动"
+        tvStatus.text = if (monitoring) "监护中" else "待启动"
 
-        // 状态指示点动画
-        val dotDrawable = indicatorDot.background as? GradientDrawable
-        dotDrawable?.setColor(
-            if (monitoring) getColor(R.color.safe_green) else getColor(R.color.text_hint)
-        )
+        // 状态指示点 + 卡片背景（selector 响应 selected 状态）
+        indicatorDot.isSelected = monitoring
+        cardMonitor.isSelected = monitoring
+        // 运行态文字改白色，保证渐变背景对比度
+        if (monitoring) {
+            tvStatus.setTextColor(getColor(R.color.text_on_primary))
+            tvLicense.setTextColor(getColor(R.color.text_on_primary))
+        } else {
+            tvStatus.setTextColor(getColor(R.color.text_primary))
+            tvLicense.setTextColor(getColor(R.color.text_secondary))
+        }
 
         // 显示最近日志
         val logs = config.getLogs()
@@ -297,8 +345,8 @@ class MainActivity : AppCompatActivity() {
             val last = logs.last()
             val time = DateFormat.format("MM-dd HH:mm:ss", last.timestamp)
             val prefix = when (last.type) {
-                "alert" -> "⚠️"
-                else -> "ℹ️"
+                "alert" -> "[告警]"
+                else -> "[事件]"
             }
             tvLog.text = "$prefix $time ${last.message}"
             layoutRecentLog.visibility = View.VISIBLE
@@ -315,7 +363,7 @@ class MainActivity : AppCompatActivity() {
 
     fun onActivated() {
         checkLicense()
-        Toast.makeText(this, "✅ 激活成功！感谢购买长者守护", Toast.LENGTH_LONG).show()
+        Toast.makeText(this, "✅ 激活成功！感谢购买安巢", Toast.LENGTH_LONG).show()
     }
 
     override fun onDestroy() {

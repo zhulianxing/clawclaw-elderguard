@@ -1,0 +1,9 @@
+# 复制此文件为 local.properties 并填入实际值
+# SDK 路径（通常已由 Android Studio 自动生成）
+# sdk.dir=/Users/yourname/Library/Android/sdk
+
+# 签名配置（发布构建必需）
+KEYSTORE_PATH=zhuapaq-release.keystore
+KEYSTORE_PASS=你的keystore密码
+KEY_ALIAS=zhuapaq
+KEY_PASS=你的key密码

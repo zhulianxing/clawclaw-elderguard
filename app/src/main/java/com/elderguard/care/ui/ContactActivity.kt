@@ -27,14 +27,21 @@ class ContactActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_contact)
+        // 使用自定义 Toolbar 替代默认 ActionBar
+        findViewById<androidx.appcompat.widget.Toolbar?>(R.id.toolbar)?.let {
+            setSupportActionBar(it)
+            supportActionBar?.setDisplayShowTitleEnabled(false)
+        }
 
         recyclerView = findViewById(R.id.rv_contacts)
         fabAdd = findViewById(R.id.fab_add)
         layoutEmpty = findViewById(R.id.layout_empty)
 
-        adapter = ContactAdapter(contacts) { position ->
-            deleteContact(position)
-        }
+        adapter = ContactAdapter(
+            contacts,
+            onDelete = { position -> deleteContact(position) },
+            onEdit = { contact, position -> showEditDialog(contact, position) }
+        )
 
         recyclerView.layoutManager = LinearLayoutManager(this)
         recyclerView.adapter = adapter
@@ -59,6 +66,16 @@ class ContactActivity : AppCompatActivity() {
         recyclerView.visibility = if (contacts.isEmpty()) View.GONE else View.VISIBLE
     }
 
+    private fun isValidPhone(phone: String): Boolean {
+        return android.util.Patterns.PHONE.matcher(phone).matches() &&
+            phone.matches(Regex("^1[3-9]\\d{9}$"))
+    }
+
+    private fun isValidName(name: String): Boolean {
+        // 姓名不能为空、不能为纯数字、长度 2-20
+        return name.length in 2..20 && !name.matches(Regex("^\\d+$"))
+    }
+
     private fun showAddDialog() {
         val dialogView = LayoutInflater.from(this).inflate(R.layout.dialog_add_contact, null)
         val etName = dialogView.findViewById<EditText>(R.id.et_name)
@@ -71,14 +88,51 @@ class ContactActivity : AppCompatActivity() {
             .setPositiveButton("保存") { _, _ ->
                 val name = etName.text.toString().trim()
                 val phone = etPhone.text.toString().trim()
-                if (name.isNotEmpty() && phone.length >= 11) {
-                    val contacts = config.getContacts().toMutableList()
-                    contacts.add(AppConfig.Contact(name, phone))
-                    config.saveContacts(contacts)
-                    adapter.updateData(contacts)
-                    Toast.makeText(this, "已添加", Toast.LENGTH_SHORT).show()
-                } else {
-                    Toast.makeText(this, "请输入正确的姓名和手机号", Toast.LENGTH_SHORT).show()
+                when {
+                    name.isEmpty() -> Toast.makeText(this, "请输入姓名", Toast.LENGTH_SHORT).show()
+                    !isValidName(name) -> Toast.makeText(this, "姓名需 2-20 字且不能为纯数字", Toast.LENGTH_SHORT).show()
+                    !isValidPhone(phone) -> Toast.makeText(this, "请输入有效的手机号（11位数字，1开头）", Toast.LENGTH_SHORT).show()
+                    else -> {
+                        val contacts = config.getContacts().toMutableList()
+                        contacts.add(AppConfig.Contact(name, phone))
+                        config.saveContacts(contacts)
+                        adapter.updateData(contacts)
+                        Toast.makeText(this, "已添加", Toast.LENGTH_SHORT).show()
+                    }
+                }
+            }
+            .setNegativeButton("取消", null)
+            .show()
+    }
+
+    private fun showEditDialog(contact: AppConfig.Contact, position: Int) {
+        val dialogView = LayoutInflater.from(this).inflate(R.layout.dialog_add_contact, null)
+        val etName = dialogView.findViewById<EditText>(R.id.et_name)
+        val etPhone = dialogView.findViewById<EditText>(R.id.et_phone)
+        etPhone.inputType = InputType.TYPE_CLASS_PHONE
+
+        etName.setText(contact.name)
+        etPhone.setText(contact.phone)
+
+        AlertDialog.Builder(this)
+            .setTitle("编辑联系人")
+            .setView(dialogView)
+            .setPositiveButton("保存") { _, _ ->
+                val newName = etName.text.toString().trim()
+                val newPhone = etPhone.text.toString().trim()
+                when {
+                    newName.isEmpty() -> Toast.makeText(this, "请输入姓名", Toast.LENGTH_SHORT).show()
+                    !isValidName(newName) -> Toast.makeText(this, "姓名需 2-20 字且不能为纯数字", Toast.LENGTH_SHORT).show()
+                    !isValidPhone(newPhone) -> Toast.makeText(this, "请输入有效的手机号（11位数字，1开头）", Toast.LENGTH_SHORT).show()
+                    else -> {
+                        val contacts = config.getContacts().toMutableList()
+                        if (position < contacts.size) {
+                            contacts[position] = contact.copy(name = newName, phone = newPhone)
+                            config.saveContacts(contacts)
+                            adapter.updateData(contacts)
+                            Toast.makeText(this, "已更新", Toast.LENGTH_SHORT).show()
+                        }
+                    }
                 }
             }
             .setNegativeButton("取消", null)
@@ -96,13 +150,15 @@ class ContactActivity : AppCompatActivity() {
 
 class ContactAdapter(
     private var contacts: MutableList<AppConfig.Contact>,
-    private val onDelete: (Int) -> Unit
+    private val onDelete: (Int) -> Unit,
+    private val onEdit: (AppConfig.Contact, Int) -> Unit
 ) : RecyclerView.Adapter<ContactAdapter.ViewHolder>() {
 
     class ViewHolder(view: View) : RecyclerView.ViewHolder(view) {
         val tvName: android.widget.TextView = view.findViewById(R.id.tv_contact_name)
         val tvPhone: android.widget.TextView = view.findViewById(R.id.tv_contact_phone)
         val btnDelete: android.widget.ImageButton = view.findViewById(R.id.btn_delete)
+        val btnEdit: android.widget.ImageButton = view.findViewById(R.id.btn_edit)
     }
 
     override fun onCreateViewHolder(parent: android.view.ViewGroup, viewType: Int): ViewHolder {
@@ -115,6 +171,7 @@ class ContactAdapter(
         holder.tvName.text = c.name
         holder.tvPhone.text = c.phone
         holder.btnDelete.setOnClickListener { onDelete(position) }
+        holder.btnEdit.setOnClickListener { onEdit(c, position) }
     }
 
     override fun getItemCount() = contacts.size

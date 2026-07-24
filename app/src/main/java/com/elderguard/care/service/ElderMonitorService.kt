@@ -18,6 +18,8 @@ import android.os.Looper
 import android.os.PowerManager
 import android.os.SystemClock
 import android.telephony.SmsManager
+import android.media.session.MediaSession
+import android.view.KeyEvent
 import android.util.Log
 import androidx.camera.core.CameraSelector
 import androidx.camera.core.ImageAnalysis
@@ -65,6 +67,22 @@ class ElderMonitorService : Service(), LifecycleOwner {
     private var simulateReceiver: SimulateReceiver? = null
     private var cameraProviderFuture: ListenableFuture<ProcessCameraProvider>? = null
     private var wakeLock: PowerManager.WakeLock? = null
+    private val wakeLockHandler = android.os.Handler(android.os.Looper.getMainLooper())
+    private val wakeLockRenewal = object : Runnable {
+        override fun run() {
+            try {
+                if (wakeLock?.isHeld == false) wakeLock?.acquire()
+            } catch (_: Exception) {}
+            wakeLockHandler.postDelayed(this, 5 * 60 * 1000L) // 每 5 分钟检查续期
+        }
+    }
+
+    // ── SOS 物理按钮（音量键连按）──
+    private var mediaSession: MediaSession? = null
+    private var volumePressCount = 0
+    private var lastVolumePressTime = 0L
+    private val VOLUME_SOS_THRESHOLD = 3  // 连按 3 次音量键触发 SOS
+    private val VOLUME_SOS_WINDOW_MS = 2000L  // 2 秒内连按
 
     override fun onCreate() {
         super.onCreate()
@@ -100,7 +118,8 @@ class ElderMonitorService : Service(), LifecycleOwner {
             PowerManager.PARTIAL_WAKE_LOCK,
             "ElderGuard::MonitorWakeLock"
         )
-        wakeLock?.acquire(10 * 60 * 1000L) // 10分钟
+        wakeLock?.acquire()
+        wakeLockHandler.postDelayed(wakeLockRenewal, 5 * 60 * 1000L)
 
         // 注册 SMS 状态接收器
         registerSmsReceivers()
@@ -129,6 +148,28 @@ class ElderMonitorService : Service(), LifecycleOwner {
         }
         poseAnalyzer.onStillnessDetected = {
             triggerAlert("长时间静止")
+        }
+
+        // 启动 MediaSession 监听音量键 SOS
+        try {
+            mediaSession = MediaSession(this, "AnNestSOS").apply {
+                setCallback(object : MediaSession.Callback() {
+                    override fun onPlay() { triggerSOS() }
+                    override fun onPause() { triggerSOS() }
+                    override fun onMediaButtonEvent(mediaButtonIntent: android.content.Intent): Boolean {
+                        val event = mediaButtonIntent.getParcelableExtra<KeyEvent>(android.content.Intent.EXTRA_KEY_EVENT)
+                        if (event != null && event.keyCode == KeyEvent.KEYCODE_VOLUME_UP) {
+                            handleVolumePress()
+                            return true
+                        }
+                        return super.onMediaButtonEvent(mediaButtonIntent)
+                    }
+                })
+                isActive = true
+            }
+            android.util.Log.i("AnNest", "🔴 SOS 物理按钮监听已启动（音量上键连按 $VOLUME_SOS_THRESHOLD 次）")
+        } catch (e: Exception) {
+            android.util.Log.e("AnNest", "MediaSession 启动失败", e)
         }
 
         Log.i(TAG, "✅ Monitoring started")
@@ -220,11 +261,59 @@ class ElderMonitorService : Service(), LifecycleOwner {
         // 发送短信
         sendSmsAlerts(reason, time)
 
+        // 发送 SMS 后，自动拨打第一联系人
+        try {
+            val contacts = config.getContacts()
+            val firstContact = contacts.firstOrNull()
+            if (firstContact != null) {
+                val callIntent = android.content.Intent(android.content.Intent.ACTION_CALL).apply {
+                    data = android.net.Uri.parse("tel:${firstContact.phone}")
+                    addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK)
+                }
+                startActivity(callIntent)
+                android.util.Log.i("AnNest", "📞 自动拨打紧急联系人: ${firstContact.name} ${firstContact.phone}")
+            }
+        } catch (e: Exception) {
+            android.util.Log.e("AnNest", "拨号失败，降级为仅 SMS", e)
+        }
+
+        // 发送邮件告警（补充通道，启动邮件客户端预填内容）
+        try {
+            EmailAlerter.sendAlert(this, "监护告警", reason)
+        } catch (e: Exception) {
+            android.util.Log.e("AnNest", "邮件告警失败", e)
+        }
+
         // 刷新主界面
         sendBroadcast(Intent("com.elderguard.care.REFRESH_UI"))
 
         // 重置检测状态
         poseAnalyzer.resetFallDetection()
+    }
+
+    private fun handleVolumePress() {
+        val now = System.currentTimeMillis()
+        if (now - lastVolumePressTime > VOLUME_SOS_WINDOW_MS) {
+            volumePressCount = 1
+        } else {
+            volumePressCount++
+        }
+        lastVolumePressTime = now
+        android.util.Log.i("AnNest", "🔴 音量键按下 $volumePressCount/$VOLUME_SOS_THRESHOLD")
+
+        if (volumePressCount >= VOLUME_SOS_THRESHOLD) {
+            volumePressCount = 0
+            triggerSOS()
+        }
+    }
+
+    /**
+     * 老人主动 SOS 求救（音量键连按触发）
+     */
+    private fun triggerSOS() {
+        android.util.Log.w("AnNest", "🆘 老人主动 SOS 触发！")
+        // 复用现有告警链路，type=voice 表示语音求救类
+        triggerAlert("老人主动 SOS 求救（音量键连按 3 次触发）")
     }
 
     private fun sendSmsAlerts(reason: String, time: String) {
@@ -284,6 +373,12 @@ class ElderMonitorService : Service(), LifecycleOwner {
     }
 
     private fun stopMonitoring() {
+        try {
+            mediaSession?.isActive = false
+            mediaSession?.release()
+            mediaSession = null
+        } catch (_: Exception) {}
+        wakeLockHandler.removeCallbacks(wakeLockRenewal)
         unregisterSmsReceivers()
         voiceDetector.stop()
         poseAnalyzer.release()
@@ -310,7 +405,7 @@ class ElderMonitorService : Service(), LifecycleOwner {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             val channel = NotificationChannel(
                 CHANNEL_ID,
-                "长者守护",
+                "安巢",
                 NotificationManager.IMPORTANCE_HIGH
             ).apply {
                 description = "老人监护告警通知"
@@ -328,9 +423,9 @@ class ElderMonitorService : Service(), LifecycleOwner {
         )
 
         return NotificationCompat.Builder(this, CHANNEL_ID)
-            .setContentTitle("长者守护")
+            .setContentTitle("安巢")
             .setContentText(text)
-            .setSmallIcon(android.R.drawable.ic_menu_mylocation)
+            .setSmallIcon(R.drawable.ic_notification)
             .setContentIntent(pendingIntent)
             .setOngoing(true)
             .setPriority(NotificationCompat.PRIORITY_HIGH)
@@ -361,7 +456,7 @@ class ElderMonitorService : Service(), LifecycleOwner {
             val phone = intent.getStringExtra("contact_phone") ?: ""
             when (resultCode) {
                 Activity.RESULT_OK ->
-                    Log.i(TAG, "✅ SMS delivered to $name ($phone)")
+                    Log.i(TAG, "✅ SMS sent to $name ($phone)")
                 SmsManager.RESULT_ERROR_GENERIC_FAILURE ->
                     Log.e(TAG, "❌ SMS generic failure for $name ($phone), errorCode=$resultCode")
                 SmsManager.RESULT_ERROR_NO_SERVICE ->
@@ -432,7 +527,7 @@ class ElderMonitorService : Service(), LifecycleOwner {
         simulateReceiver = SimulateReceiver()
         val filter = IntentFilter("com.elderguard.care.SIMULATE")
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            registerReceiver(simulateReceiver, filter, Context.RECEIVER_EXPORTED)
+            registerReceiver(simulateReceiver, filter, Context.RECEIVER_NOT_EXPORTED)
         } else {
             registerReceiver(simulateReceiver, filter)
         }

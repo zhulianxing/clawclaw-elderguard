@@ -5,6 +5,9 @@ import android.content.SharedPreferences;
 import android.os.Handler;
 import android.os.Looper;
 
+import androidx.security.crypto.EncryptedSharedPreferences;
+import androidx.security.crypto.MasterKey;
+
 import org.bouncycastle.asn1.x9.X9ECParameters;
 import org.bouncycastle.crypto.digests.KeccakDigest;
 import org.bouncycastle.crypto.ec.CustomNamedCurves;
@@ -65,6 +68,7 @@ public class Web3LicenseManager {
     private static final String KEY_TRIAL_START = "trial_start";
     private static final String KEY_OFFLINE_ACTIVATED = "offline_activated";
 
+    private final Context appContext;
     private final SharedPreferences prefs;
     private final OkHttpClient http;
     private final ExecutorService executor;
@@ -75,6 +79,7 @@ public class Web3LicenseManager {
     private static final long DAY_MS = 86400000L;
 
     public Web3LicenseManager(Context ctx, String packageName) {
+        this.appContext = ctx.getApplicationContext();
         this.prefs = ctx.getSharedPreferences(PREFS, Context.MODE_PRIVATE);
         this.packageName = packageName;
         this.http = new OkHttpClient.Builder()
@@ -86,6 +91,24 @@ public class Web3LicenseManager {
 
     // ===== 钱包管理 =====
 
+    private SharedPreferences getSecurePrefs() {
+        try {
+            MasterKey masterKey = new MasterKey.Builder(appContext)
+                    .setKeyScheme(MasterKey.KeyScheme.AES256_GCM)
+                    .build();
+            return EncryptedSharedPreferences.create(
+                    appContext,
+                    "annest_secure_prefs",
+                    masterKey,
+                    EncryptedSharedPreferences.PrefKeyEncryptionScheme.AES256_SIV,
+                    EncryptedSharedPreferences.PrefValueEncryptionScheme.AES256_GCM
+            );
+        } catch (Exception e) {
+            // 降级：不存储，仅内存持有
+            return null;
+        }
+    }
+
     public boolean hasWallet() {
         return prefs.contains(KEY_ADDRESS);
     }
@@ -95,7 +118,11 @@ public class Web3LicenseManager {
     }
 
     public String getPrivateKey() {
-        return prefs.getString(KEY_PRIVATE, null);
+        SharedPreferences sp = getSecurePrefs();
+        if (sp != null) {
+            return sp.getString(KEY_PRIVATE, null);
+        }
+        return null;
     }
 
     public boolean importWallet(String privateKeyHex) {
@@ -103,8 +130,11 @@ public class Web3LicenseManager {
         if (privateKeyHex.length() != 64) return false;
         try {
             String address = addressFromPrivateKey(privateKeyHex);
+            SharedPreferences sp = getSecurePrefs();
+            if (sp != null) {
+                sp.edit().putString(KEY_PRIVATE, privateKeyHex).apply();
+            }
             prefs.edit()
-                    .putString(KEY_PRIVATE, privateKeyHex)
                     .putString(KEY_ADDRESS, address)
                     .apply();
             return true;
@@ -114,8 +144,11 @@ public class Web3LicenseManager {
     }
 
     public void clearWallet() {
+        SharedPreferences sp = getSecurePrefs();
+        if (sp != null) {
+            sp.edit().remove(KEY_PRIVATE).apply();
+        }
         prefs.edit()
-                .remove(KEY_PRIVATE)
                 .remove(KEY_ADDRESS)
                 .remove(KEY_VERIFIED)
                 .apply();
@@ -235,9 +268,11 @@ public class Web3LicenseManager {
         return valid;
     }
 
-    private boolean validateOfflineCode(String code) {
-        // 简单格式验证，实际可扩展
-        return code != null && code.length() >= 16 && code.matches("[A-Z0-9-]+");
+    public boolean validateOfflineCode(String code) {
+        if (code == null || code.length() < 16) return false;
+        if (!code.matches("^[A-Z0-9-]+$")) return false;
+        // 委托 LicenseManager 做 SHA-256 校验（不再仅校验长度）
+        return com.elderguard.care.data.LicenseManager.Companion.getInstance(appContext).isValidCode(code);
     }
 
     // ===== RPC 调用 =====

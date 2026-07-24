@@ -152,7 +152,18 @@ class VoiceDetector private constructor(private val context: Context) {
                 }
 
                 override fun onTimeout() {
-                    Log.d(TAG, "Speech timeout, auto-restarting")
+                    android.util.Log.w("AnNest", "Vosk 识别超时，自动重启监听")
+                    try {
+                        speechService?.stop()
+                        speechService?.shutdown()
+                    } catch (_: Exception) {}
+                    speechService = null
+                    try {
+                        startRecognition()
+                    } catch (e: Exception) {
+                        android.util.Log.e("AnNest", "Vosk 重启失败", e)
+                        stop()
+                    }
                 }
             })
 

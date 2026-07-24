@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- 暗色：低饱和暖橙，保证对比度 -->
+
+    <color name="primary">#FF8A5C</color>
+    <color name="primary_dark">#E85D2C</color>
+    <color name="primary_light">#FFB089</color>
+    <color name="accent">#FF8A5C</color>
+
+    <color name="safe_green">#5DBA8E</color>
+    <color name="safe_green_dark">#3D9B6E</color>
+    <color name="alert_red">#EF5350</color>
+    <color name="alert_red_dark">#C62828</color>
+    <color name="warning_orange">#FFB74D</color>
+    <color name="warning_orange_dark">#E8902C</color>
+
+    <color name="background">#121212</color>
+    <color name="surface">#1E1E1E</color>
+    <color name="surface_variant">#2A2A2A</color>
+
+    <color name="text_primary">#FFFFFF</color>
+    <color name="text_secondary">#B0B0B0</color>
+    <color name="text_hint">#808080</color>
+    <color name="text_on_primary">#FFFFFF</color>
+
+    <color name="divider">#333333</color>
+    <color name="ic_notification_color">#FF8A5C</color>
+    <color name="brand_warm">#FF8A5C</color>
+    <color name="brand_warm_dark">#E85D2C</color>
+    <color name="brand_warm_light">#FFB089</color>
+</resources>

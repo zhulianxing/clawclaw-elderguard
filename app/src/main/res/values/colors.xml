@@ -1,27 +1,40 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!-- 主色调 -->
-    <color name="primary">#1565C0</color>
-    <color name="primary_dark">#0D47A1</color>
-    <color name="primary_light">#42A5F5</color>
-    <color name="accent">#FF6F00</color>
+    <!-- 安巢设计系统：克制暖色 -->
 
-    <!-- 功能色（已在 themes.xml 中的 safe_green / warning_orange / alert_red 部分沿用，此处补全变体） -->
-    <color name="safe_green_dark">#388E3C</color>
-    <color name="alert_red_dark">#D32F2F</color>
-    <color name="warning_orange_dark">#F57C00</color>
+    <!-- 主色：暖橙（单一强调色） -->
+    <color name="primary">#E85D2C</color>
+    <color name="primary_dark">#BF3D0F</color>
+    <color name="primary_light">#FFB089</color>
+    <color name="accent">#E85D2C</color>
 
-    <!-- 背景 -->
-    <color name="background">#F0F4F8</color>
+    <!-- 语义色（仅用于状态，不用于装饰） -->
+    <color name="safe_green">#2E7D5B</color>
+    <color name="safe_green_dark">#1B5E45</color>
+    <color name="alert_red">#C62828</color>
+    <color name="alert_red_dark">#8E1B1B</color>
+    <color name="warning_orange">#E8902C</color>
+    <color name="warning_orange_dark">#BF6F0F</color>
+
+    <!-- 背景（暖灰，非纯白，更舒适） -->
+    <color name="background">#F7F5F2</color>
     <color name="surface">#FFFFFF</color>
-    <color name="surface_variant">#F5F7FA</color>
+    <color name="surface_variant">#EFEBE5</color>
 
-    <!-- 文字 -->
-    <color name="text_primary">#212121</color>
-    <color name="text_secondary">#616161</color>
+    <!-- 文字层级 -->
+    <color name="text_primary">#1A1A1A</color>
+    <color name="text_secondary">#5C5C5C</color>
     <color name="text_hint">#9E9E9E</color>
     <color name="text_on_primary">#FFFFFF</color>
 
-    <!-- 分割线 -->
-    <color name="divider">#E0E0E0</color>
+    <!-- 分割线（暖灰） -->
+    <color name="divider">#E0DCD5</color>
+
+    <!-- 通知图标色 -->
+    <color name="ic_notification_color">#E85D2C</color>
+
+    <!-- 品牌色别名（图标用） -->
+    <color name="brand_warm">#E85D2C</color>
+    <color name="brand_warm_dark">#BF3D0F</color>
+    <color name="brand_warm_light">#FFB089</color>
 </resources>

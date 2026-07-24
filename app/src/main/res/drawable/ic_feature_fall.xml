@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp" android:height="24dp"
+    android:viewportWidth="24" android:viewportHeight="24"
+    android:tint="?attr/colorControlNormal">
+    <!-- 头部 -->
+    <path android:fillColor="@android:color/white"
+        android:pathData="M14.5,4 C14.5,2.62 13.38,1.5 12,1.5 C10.62,1.5 9.5,2.62 9.5,4 C9.5,5.38 10.62,6.5 12,6.5 C13.38,6.5 14.5,5.38 14.5,4 Z"/>
+    <!-- 身体（横向摔倒） -->
+    <path android:fillColor="@android:color/white"
+        android:pathData="M3,13 L8,13 L10.5,16 L17,16 C17.55,16 18,16.45 18,17 C18,17.55 17.55,18 17,18 L9.5,18 L7,14 L5,19 L2.5,19 C1.95,19 1.5,18.55 1.5,18 C1.5,17.45 1.95,17 2.5,17 L3.8,17 L4.5,14 L3,14 C2.45,14 2,13.55 2,13 C2,12.45 2.45,12 3,12 Z"/>
+</vector>

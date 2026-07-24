@@ -42,8 +42,8 @@ class AppConfig private constructor(context: Context) {
 
     fun getSmsTemplate(): String {
         return prefs.getString("sms_template", 
-            "【长者守护】紧急告警：检测到家中老人可能发生意外（跌倒/求救/长时间静止），请尽快查看！时间：")
-            ?: "【长者守护】紧急告警：检测到家中老人可能发生意外，请尽快查看！"
+            "【安巢】紧急告警：检测到家中老人可能发生意外（跌倒/求救/长时间静止），请尽快查看！时间：")
+            ?: "【安巢】紧急告警：检测到家中老人可能发生意外，请尽快查看！"
     }
 
     fun setSmsTemplate(template: String) {
