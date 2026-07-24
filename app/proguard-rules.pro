@@ -30,3 +30,13 @@
 # JNA（Vosk 依赖）
 -keep class com.sun.jna.** { *; }
 -dontwarn com.sun.jna.**
+
+# AutoValue / JavaPoet 缺失类（编译时注解处理器，运行时无需）
+-dontwarn javax.lang.model.SourceVersion
+-dontwarn javax.lang.model.element.Element
+-dontwarn javax.lang.model.element.ElementKind
+-dontwarn javax.lang.model.element.Modifier
+-dontwarn javax.lang.model.type.TypeMirror
+-dontwarn javax.lang.model.type.TypeVisitor
+-dontwarn javax.lang.model.util.SimpleTypeVisitor8
+-dontwarn autovalue.shaded.com.squareup.javapoet.**
